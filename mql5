@@ -1,0 +1,94 @@
+mql5
+//+------------------------------------------------------------------+
+//|                                                  Better RSI.mq5 |
+//|                      Copyright 2022, Forex Robot Easy Team       |
+//|                                              forexroboteasy.com |
+//+------------------------------------------------------------------+
+
+#property copyright 'Copyright 2022, Forex Robot Easy Team'
+#property link      'forexroboteasy.com'
+
+#property version   '1.00'
+#property description 'Better RSI with Market Cycle indicator by TradeCalmly'
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+double RSI_Buffer[];
+double Market_Cycle_Buffer[];
+
+//+------------------------------------------------------------------+
+//| Customizable Inputs                                               |
+//+------------------------------------------------------------------+
+input int RSI_Period = 14;              // RSI period length
+input ENUM_MA_METHOD RSI_Method = MODE_SMA;   // RSI smoothing method
+input double RSI_Threshold = 70;        // RSI overbought/oversold threshold
+
+input int Market_Cycle_Period = 10;     // Market cycle period length
+input ENUM_MA_METHOD Market_Cycle_Method = MODE_SMA;   // Market cycle smoothing method
+
+//+------------------------------------------------------------------+
+//| Expert initialization function                                   |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+    // Indicator buffers mapping
+    SetIndexBuffer(0, RSI_Buffer);
+    SetIndexBuffer(1, Market_Cycle_Buffer);
+
+    // Set indicator buffers empty values
+    ArrayInitialize(RSI_Buffer, 0);
+    ArrayInitialize(Market_Cycle_Buffer, 0);
+
+    // Set indicator labels
+    SetIndexLabel(0, 'RSI');
+    SetIndexLabel(1, 'Market Cycle');
+
+    return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Expert deinitialization function                                 |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+{
+    // Free indicator buffers
+    ArrayFree(RSI_Buffer);
+    ArrayFree(Market_Cycle_Buffer);
+}
+
+//+------------------------------------------------------------------+
+//| Expert tick function                                              |
+//+------------------------------------------------------------------+
+void OnTick()
+{
+    // Calculate RSI
+    double rsi = iRSI(Symbol(), PERIOD_CURRENT, RSI_Period, PRICE_CLOSE, RSI_Method, 0);
+
+    // Calculate Market Cycle
+    double marketCycle = iMA(NULL, PERIOD_CURRENT, Market_Cycle_Period, 0, Market_Cycle_Method, 0);
+
+    // Store RSI and Market Cycle values in buffers
+    ArraySetAsSeries(RSI_Buffer, true);
+    ArraySetAsSeries(Market_Cycle_Buffer, true);
+    RSI_Buffer[0] = rsi;
+    Market_Cycle_Buffer[0] = marketCycle;
+
+    // Generate trading signals based on RSI and Market Cycle
+    bool isBullishSignal = rsi < RSI_Threshold && marketCycle > 0;
+    bool isBearishSignal = rsi > (100 - RSI_Threshold) && marketCycle < 0;
+
+    // Display trading signals
+    if (isBullishSignal)
+    {
+        Print('Bullish signal generated: Buy');
+    }
+    else if (isBearishSignal)
+    {
+        Print('Bearish signal generated: Sell');
+    }
+}
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
